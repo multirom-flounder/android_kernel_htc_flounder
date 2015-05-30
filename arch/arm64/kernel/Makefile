@@ -28,6 +28,7 @@ arm64-obj-$(CONFIG_ARM_CPU_SUSPEND)	+= sleep.o suspend.o
 
 obj-$(CONFIG_PCI)               += bios32.o
 obj-$(CONFIG_SWP_EMULATE)	+= swp_emulate.o
+arm64-obj-$(CONFIG_KEXEC)		+= machine_kexec.o relocate_kernel.o
 arm64-obj-$(CONFIG_JUMP_LABEL)		+= jump_label.o
 
 obj-y					+= $(arm64-obj-y) vdso/

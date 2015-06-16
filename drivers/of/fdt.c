@@ -9,15 +9,18 @@
  * version 2 as published by the Free Software Foundation.
  */
 
+#include <linux/crc32.h>
 #include <linux/kernel.h>
 #include <linux/initrd.h>
 #include <linux/memblock.h>
 #include <linux/module.h>
+#include <linux/libfdt.h>
 #include <linux/of.h>
 #include <linux/of_fdt.h>
 #include <linux/string.h>
 #include <linux/errno.h>
 #include <linux/slab.h>
+#include <linux/sysfs.h>
 
 #include <asm/setup.h>  /* for COMMAND_LINE_SIZE */
 #ifdef CONFIG_PPC
@@ -443,6 +446,8 @@ struct boot_param_header *initial_boot_params;
 
 #ifdef CONFIG_OF_EARLY_FLATTREE
 
+static u32 of_fdt_crc32;
+
 /**
  * of_scan_flat_dt - scan flattened tree blob and call callback on each.
  * @it: callback function
@@ -771,6 +776,8 @@ bool __init early_init_dt_scan(void *params)
 
 	/* Setup flat device-tree pointer */
 	initial_boot_params = params;
+	of_fdt_crc32 = crc32_be(~0, initial_boot_params,
+				fdt_totalsize(initial_boot_params));
 
 	/* check device tree validity */
 	if (be32_to_cpu(initial_boot_params->magic) != OF_DT_HEADER) {
@@ -806,5 +813,45 @@ void __init unflatten_device_tree(void)
 	/* Get pointer to "/chosen" and "/aliasas" nodes for use everywhere */
 	of_alias_scan(early_init_dt_alloc_memory_arch);
 }
+
+#ifdef CONFIG_SYSFS
+/* macros to create static binary attributes easier */
+#define __BIN_ATTR(_name, _mode, _read, _write, _size) {                \
+        .attr = { .name = __stringify(_name), .mode = _mode },          \
+        .read   = _read,                                                \
+        .write  = _write,                                               \
+        .size   = _size,                                                \
+}
+
+static ssize_t of_fdt_raw_read(struct file *filp, struct kobject *kobj,
+			       struct bin_attribute *bin_attr,
+			       char *buf, loff_t off, size_t count)
+{
+	memcpy(buf, initial_boot_params + off, count);
+	return count;
+}
+
+static int __init of_fdt_raw_init(void)
+{
+	u32 of_fdt_crc32_new = 0;
+	static struct bin_attribute of_fdt_raw_attr =
+		__BIN_ATTR(fdt, S_IRUSR, of_fdt_raw_read, NULL, 0);
+
+	if (!initial_boot_params)
+		return 0;
+
+	//of_fdt_crc32_new = crc32_be(~0, initial_boot_params,
+        //                             fdt_totalsize(initial_boot_params));
+	//if (of_fdt_crc32 != of_fdt_crc32_new) {
+	//	pr_warn("fdt: not creating '/sys/firmware/fdt': CRC check failed. Old: %u New: %u\n", of_fdt_crc32, of_fdt_crc32_new);
+	//	return 0;
+	//}
+	of_fdt_raw_attr.size = fdt_totalsize(initial_boot_params);
+	return sysfs_create_bin_file(firmware_kobj, &of_fdt_raw_attr);
+}
+late_initcall(of_fdt_raw_init);
+
+#undef __BIN_ATTR
+#endif
 
 #endif /* CONFIG_OF_EARLY_FLATTREE */

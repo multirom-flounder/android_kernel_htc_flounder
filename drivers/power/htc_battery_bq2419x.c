@@ -86,7 +86,7 @@ enum aicl_phase {
 
 #define INPUT_ADJUST_RETRY_TIMES_MAX	(2)
 #define INPUT_ADJUST_RETRY_DELAY_S	(300)
-#define INPUT_ADJUST_CURRENT_MA		(900)
+#define INPUT_ADJUST_CURRENT_MA		(2000)
 #define INPUT_ADJUST_VBUS_CHECK_MA	(4100)
 
 struct htc_battery_bq2419x_data {

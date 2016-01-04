@@ -610,4 +610,11 @@ static int __init init_machine_late(void)
 		machine_desc->init_late();
 	return 0;
 }
+static int __init dumphardboot(void) {
+	unsigned long *h = ioremap(0x1fd00000, SZ_1M);
+	pr_info("Hardboot: %lx %lx %lx %lx %lx %lx %lx %lx\n",
+		h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7]);
+	iounmap(h);
+	return 0;
+}
 late_initcall(init_machine_late);

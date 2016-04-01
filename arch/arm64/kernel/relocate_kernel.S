@@ -14,6 +14,8 @@
 #include <asm/memory.h>
 #include <asm/page.h>
 
+#include "../mm/proc-macros.S"
+
 /* The list entry flags. */
 #define IND_DESTINATION_BIT 0
 #define IND_INDIRECTION_BIT 1

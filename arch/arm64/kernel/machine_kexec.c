@@ -87,7 +87,9 @@ static void kexec_list_flush(unsigned long kimage_head)
 	unsigned long *entry;
 
 	for (entry = &kimage_head; ; entry++) {
-		unsigned int flag = *entry & IND_FLAGS;
+		unsigned int flag = *entry &
+			(IND_DESTINATION | IND_INDIRECTION | IND_DONE |
+			IND_SOURCE);
 		void *addr = phys_to_virt(*entry & PAGE_MASK);
 
 		switch (flag) {

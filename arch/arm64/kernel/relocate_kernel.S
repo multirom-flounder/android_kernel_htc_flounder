@@ -19,10 +19,7 @@
 #define IND_DONE_BIT		2
 #define IND_SOURCE_BIT		3
 
-#ifdef CONFIG_KEXEC_HARDBOOT
-// MSM8994 specific
-#define MPM2_MPM_PS_HOLD	0xFC4AB000
-#endif
+#define TEGRA_PMC_BASE			0x7000E400
 
 .data
 
@@ -158,18 +155,32 @@ second_not_hardboot:
 #ifdef CONFIG_KEXEC_HARDBOOT
 hardboot:
 	/* Stash boot arguments in hardboot page:
-	 * 0: KEXEC_HB_PAGE_MAGIC
-	 * 8: kexec_kimage_start
-	 */
+	 *  0: KEXEC_HB_PAGE_MAGIC
+	 *  4: kexec_start_address
+	 *  8: kexec_mach_type (doesn't apply, set to 0)
+	 * 12: kexec_boot_atags
+	 * 16: kexec_boot_atags_len
+	 * 20: kexec_kernel_len */
 	ldr	x0, =KEXEC_HB_PAGE_ADDR
+	str	x1, [x0, #4]
+	ldr	x1, #0
+	str	x1, [x0, #8]
+	ldr	x1, kexec_boot_atags
+	str	x1, [x0, #12]
+	ldr	x1, kexec_boot_atags_len
+	str	x1, [x0, #16]
+	ldr	x1, kexec_kernel_len
+	str	x1, [x0, #20]
 	ldr	x1, =KEXEC_HB_PAGE_MAGIC
 	str	x1, [x0]
-	/* Processor specific reboot code. */
-	/* MSM8994/Snapdragon 810 version. */
-	ldr	x0, =MPM2_MPM_PS_HOLD
-	str	xzr, [x0]
+
+	ldr     x0, =TEGRA_PMC_BASE
+	ldr	x1, [x0]
+	orr	x1, x1, #0x10
+	str	x1, [x0]
 loop:	b	loop
-.ltorg
+
+	.ltorg
 #endif
 
 .align 3	/* To keep the 64-bit values below naturally aligned. */
